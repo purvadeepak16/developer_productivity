@@ -1,16 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../theme/app_colors.dart';
-import '../widgets/glass_container.dart';
-import 'topic_detail_screen.dart';
+import '../services/ai_roadmap_service.dart';
+import '../widgets/level_card.dart';
+import 'level_detail_screen.dart';
 
-class RoadmapScreen extends StatelessWidget {
-  const RoadmapScreen({super.key});
+class RoadmapScreen extends StatefulWidget {
+  final String language;
+
+  const RoadmapScreen({super.key, required this.language});
+
+  @override
+  State<RoadmapScreen> createState() => _RoadmapScreenState();
+}
+
+class _RoadmapScreenState extends State<RoadmapScreen> {
+  late final AiRoadmapService _service;
+  bool _isLoading = true;
+  Map<String, dynamic>? _roadmap;
+  String? _error;
+  bool _isLoaded = false; // prevents duplicate API calls
+
+  @override
+  void initState() {
+    super.initState();
+    _service = AiRoadmapService();
+    _loadRoadmap();
+  }
+
+  Future<void> _loadRoadmap() async {
+    if (_isLoaded) return;
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final data = await _service.generateRoadmap(widget.language);
+      setState(() {
+        _roadmap = data;
+        _isLoaded = true;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _service.dispose();
+    super.dispose();
+  }
 
   void _navigateToTopic(BuildContext context) {
+    // kept for compatibility; not used in new flow
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const TopicDetailScreen()),
+      MaterialPageRoute(builder: (_) => const Scaffold(body: SizedBox.shrink())),
     );
   }
 
@@ -19,7 +69,7 @@ class RoadmapScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Python Roadmap', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(widget.language, style: const TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: const Icon(LucideIcons.fileText, color: AppColors.textPrimary),
@@ -36,55 +86,66 @@ class RoadmapScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
-        child: Column(
-          children: [
-            // Start Node
-            _buildStartBubble(),
-            _buildConnector(isActive: true),
-            
-            // Section 1: Basics
-            _buildSectionHeader('Basics'),
-            _buildConnector(isActive: true),
-            
-            _buildTopicNode(context, 'Variables', 'completed'),
-            _buildConnector(isActive: true),
-            
-            _buildTopicNode(context, 'Data Types', 'in-progress'),
-            _buildConnector(isActive: false),
-            
-            _buildTopicNode(context, 'Operators', 'locked'),
-            _buildConnector(isActive: false, height: 40),
-            
-            // Section 2: Control Flow
-            _buildSectionHeader('Control Flow', isLocked: true),
-            _buildConnector(isActive: false),
-            
-            _buildTopicNode(context, 'If / Else', 'locked'),
-            _buildConnector(isActive: false),
-            
-            // Loops
-            _buildSectionHeader('Loops', isLocked: true),
-            _buildConnector(isActive: false),
-            
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Expanded(child: _buildTopicNode(context, 'For Loop', 'locked', isBranch: true)),
-                const SizedBox(width: 16),
-                Expanded(child: _buildTopicNode(context, 'While Loop', 'locked', isBranch: true)),
-              ],
-            ),
-            
-            _buildConnector(isActive: false, height: 40),
-            _buildSectionHeader('Functions', isLocked: true),
-            _buildConnector(isActive: false),
-            _buildTopicNode(context, 'Defining & Calling', 'locked'),
-            
-            const SizedBox(height: 48),
-          ],
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Failed to load roadmap', style: TextStyle(color: AppColors.textSecondary)),
+              const SizedBox(height: 12),
+              Text(_error!, style: const TextStyle(color: Colors.white), textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              ElevatedButton(onPressed: _loadRoadmap, child: const Text('Retry')),
+            ],
+          ),
         ),
+      );
+    }
+
+    final roadmap = _roadmap!;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          LevelCard(
+            title: 'Basic',
+            glowColor: Colors.blue,
+            onTap: () => _openLevel('basic', roadmap['basic']),
+          ),
+          LevelCard(
+            title: 'Intermediate',
+            glowColor: Colors.orange,
+            onTap: () => _openLevel('intermediate', roadmap['intermediate']),
+          ),
+          LevelCard(
+            title: 'Advanced',
+            glowColor: Colors.purple,
+            onTap: () => _openLevel('advanced', roadmap['advanced']),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openLevel(String levelKey, dynamic levelData) {
+    final Map<String, dynamic> data = (levelData is Map) ? Map<String, dynamic>.from(levelData) : <String, dynamic>{};
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => LevelDetailScreen(levelTitle: levelKey, levelData: data),
       ),
     );
   }
@@ -107,102 +168,6 @@ class RoadmapScreen extends StatelessWidget {
       child: const Text(
         'START',
         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.5),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title, {bool isLocked = false}) {
-    return Text(
-      title.toUpperCase(),
-      style: TextStyle(
-        color: isLocked ? AppColors.textSecondary.withValues(alpha: 0.5) : AppColors.textSecondary,
-        fontWeight: FontWeight.bold,
-        letterSpacing: 2,
-        fontSize: 14,
-      ),
-    );
-  }
-
-  Widget _buildConnector({required bool isActive, double height = 30}) {
-    return Container(
-      width: 4,
-      height: height,
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      decoration: BoxDecoration(
-        color: isActive ? AppColors.primaryPurple : Colors.white.withValues(alpha: 0.1),
-        boxShadow: isActive
-            ? [
-                BoxShadow(
-                  color: AppColors.primaryPurple.withValues(alpha: 0.5),
-                  blurRadius: 10,
-                  spreadRadius: 1,
-                )
-              ]
-            : null,
-      ),
-    );
-  }
-
-  Widget _buildTopicNode(BuildContext context, String title, String status, {bool isBranch = false}) {
-    Color borderColor;
-    Color iconColor;
-    IconData icon;
-    bool hasGlow = false;
-    double opacity = 1.0;
-
-    switch (status) {
-      case 'completed':
-        borderColor = AppColors.accentGreen;
-        iconColor = AppColors.accentGreen;
-        icon = LucideIcons.checkCircle2;
-        hasGlow = true;
-        break;
-      case 'in-progress':
-        borderColor = AppColors.primaryPurple;
-        iconColor = AppColors.primaryPurple;
-        icon = LucideIcons.playCircle;
-        hasGlow = true;
-        break;
-      case 'locked':
-      default:
-        borderColor = Colors.white.withValues(alpha: 0.1);
-        iconColor = AppColors.textSecondary;
-        icon = LucideIcons.lock;
-        opacity = 0.5;
-        break;
-    }
-
-    return GestureDetector(
-      onTap: status != 'locked' ? () => _navigateToTopic(context) : null,
-      child: Opacity(
-        opacity: opacity,
-        child: GlassContainer(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: isBranch ? 12 : 16),
-          width: isBranch ? null : 240,
-          borderColor: borderColor,
-          hasGlow: hasGlow,
-          glowColor: borderColor,
-          borderRadius: 20,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: iconColor, size: 20),
-              const SizedBox(width: 12),
-              Flexible(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

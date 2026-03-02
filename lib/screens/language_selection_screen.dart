@@ -26,13 +26,16 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
     {'name': 'Swift', 'icon': 'swift', 'difficulty': 'Beginner', 'color': Colors.orangeAccent, 'popular': false},
   ];
 
-  void _navigateToRoadmap() {
+  void _handleGenerate() {
     if (_selectedLanguage != null) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MainNavigationScreen(initialLanguage: _selectedLanguage!)),
       );
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -208,7 +211,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
               padding: const EdgeInsets.all(24.0),
               child: GradientButton(
                 text: 'Generate My Roadmap',
-                onPressed: _selectedLanguage != null ? _navigateToRoadmap : () {},
+                onPressed: _selectedLanguage != null ? _handleGenerate : () {},
                 gradient: _selectedLanguage != null
                     ? AppColors.primaryGradient
                     : LinearGradient(colors: [Colors.grey.withValues(alpha: 0.2), Colors.grey.withValues(alpha: 0.2)]),
