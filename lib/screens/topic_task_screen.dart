@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'concept_visualizer_screen.dart';
 import 'topic_notes_screen.dart';
 
 class TopicTaskScreen extends StatelessWidget {
@@ -53,7 +54,17 @@ class TopicTaskScreen extends StatelessWidget {
             }),
             SizedBox(height: 16),
             _buildCard(context, 'Logic Building', Icons.extension, () {
-              _showLogicDialog(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ConceptVisualizerScreen(
+                    level: level.toLowerCase(),
+                    topic: topicTitle.toLowerCase().replaceAll(' ', '_'),
+                    subtopics: _deriveSubtopics(topicTitle),
+                    language: language.toLowerCase(),
+                  ),
+                ),
+              );
             }),
           ],
         ),
@@ -94,19 +105,17 @@ class TopicTaskScreen extends StatelessWidget {
     );
   }
 
-  void _showLogicDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Logic Building'),
-        content: Text(logicContent),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Close'),
-          ),
-        ],
-      ),
-    );
+  List<String> _deriveSubtopics(String title) {
+    final normalized = title.toLowerCase();
+    if (normalized.contains('control') || normalized.contains('loop')) {
+      return ['for_loop', 'while_loop', 'if_else'];
+    }
+    if (normalized.contains('function')) {
+      return ['function_definition', 'function_call', 'return_statement'];
+    }
+    if (normalized.contains('recursion')) {
+      return ['base_case', 'recursive_call', 'stack_unwind'];
+    }
+    return [normalized.replaceAll(' ', '_')];
   }
 }
