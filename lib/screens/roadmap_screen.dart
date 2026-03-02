@@ -60,7 +60,9 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
     // kept for compatibility; not used in new flow
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const Scaffold(body: SizedBox.shrink())),
+      MaterialPageRoute(
+        builder: (_) => const Scaffold(body: SizedBox.shrink()),
+      ),
     );
   }
 
@@ -69,10 +71,16 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(widget.language, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          widget.language,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(LucideIcons.fileText, color: AppColors.textPrimary),
+            icon: const Icon(
+              LucideIcons.fileText,
+              color: AppColors.textPrimary,
+            ),
             onPressed: () {},
           ),
           const SizedBox(width: 8),
@@ -82,7 +90,9 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
           child: LinearProgressIndicator(
             value: 0.45,
             backgroundColor: Colors.white.withValues(alpha: 0.1),
-            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryPurple),
+            valueColor: const AlwaysStoppedAnimation<Color>(
+              AppColors.primaryPurple,
+            ),
           ),
         ),
       ),
@@ -102,11 +112,21 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Failed to load roadmap', style: TextStyle(color: AppColors.textSecondary)),
+              Text(
+                'Failed to load roadmap',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
               const SizedBox(height: 12),
-              Text(_error!, style: const TextStyle(color: Colors.white), textAlign: TextAlign.center),
+              Text(
+                _error!,
+                style: const TextStyle(color: Colors.white),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 16),
-              ElevatedButton(onPressed: _loadRoadmap, child: const Text('Retry')),
+              ElevatedButton(
+                onPressed: _loadRoadmap,
+                child: const Text('Retry'),
+              ),
             ],
           ),
         ),
@@ -141,11 +161,17 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
   }
 
   void _openLevel(String levelKey, dynamic levelData) {
-    final Map<String, dynamic> data = (levelData is Map) ? Map<String, dynamic>.from(levelData) : <String, dynamic>{};
+    final Map<String, dynamic> data = (levelData is Map)
+        ? Map<String, dynamic>.from(levelData)
+        : <String, dynamic>{};
     Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => LevelDetailScreen(levelTitle: levelKey, levelData: data),
+      context,
+      MaterialPageRoute(
+        builder: (_) => LevelDetailScreen(
+          levelTitle: levelKey,
+          levelData: data,
+          language: widget.language,
+        ),
       ),
     );
   }
@@ -162,12 +188,16 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
             color: AppColors.primaryPurple.withValues(alpha: 0.4),
             blurRadius: 15,
             spreadRadius: 2,
-          )
+          ),
         ],
       ),
       child: const Text(
         'START',
-        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.5,
+        ),
       ),
     );
   }

@@ -23,7 +23,10 @@ class TopicDetailScreen extends StatelessWidget {
               TextSpan(text: 'Python > Loops > '),
               TextSpan(
                 text: 'For Loop',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -54,13 +57,19 @@ class TopicDetailScreen extends StatelessWidget {
                       CircularProgressIndicator(
                         value: 0.65,
                         backgroundColor: Colors.white.withValues(alpha: 0.1),
-                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryPurple),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          AppColors.primaryPurple,
+                        ),
                         strokeWidth: 6,
                       ),
                       const Center(
                         child: Text(
                           '65%',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ],
@@ -70,50 +79,46 @@ class TopicDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 32),
 
-            // Card 1: Content
-            _buildModuleCard(
-              context: context,
-              title: 'Learn',
-              subtitle: 'Theory, Syntax, Examples',
-              icon: LucideIcons.bookOpen,
-              accentColor: AppColors.primaryBlue,
-              progress: 1.0,
-              badgeText: 'Completed ✓',
-              badgeColor: AppColors.accentGreen,
-              targetScreen: const ContentModuleScreen(),
-            ),
-            const SizedBox(height: 16),
-
-            // Card 2: Assessment
-            _buildModuleCard(
-              context: context,
-              title: 'Practice',
-              subtitle: 'Code Games + MCQ',
-              icon: LucideIcons.gamepad2,
-              accentColor: AppColors.primaryPurple,
-              progress: 0.6,
-              badgeText: 'In Progress',
-              badgeColor: AppColors.primaryPurple,
-              extraInfo: '12/20 Levels',
-              targetScreen: const CodeFillGameScreen(),
-            ),
-            const SizedBox(height: 16),
-
-            // Card 3: Logic Building
-            _buildModuleCard(
-              context: context,
-              title: 'Logic Challenge',
-              subtitle: 'Puzzles, Patterns, Problems',
-              icon: LucideIcons.puzzle,
-              accentColor: AppColors.accentOrange,
-              progress: 0.4,
-              badgeText: 'Pending',
-              badgeColor: AppColors.textSecondary,
-              targetScreen: const LogicBuildingScreen(),
+            // Example topic card for integration
+            Card(
+              color: Colors.white.withOpacity(0.05),
+              child: ListTile(
+                leading: Icon(Icons.topic, color: AppColors.primaryBlue),
+                title: Text(
+                  'Introduction to Python',
+                  style: TextStyle(color: Colors.white),
+                ),
+                subtitle: Text(
+                  'Overview, key points, mistakes',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+                trailing: Icon(Icons.arrow_forward_ios, color: Colors.white),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TopicTaskScreen(
+                        topicTitle: 'Introduction to Python',
+                        language: 'Python',
+                        level: 'basic',
+                        notesContent:
+                            'Overview of Python programming language, its uses, and basic syntax.',
+                        audioUrl: '',
+                        assessmentContent:
+                            'Assessment questions for Introduction to Python.',
+                        logicContent:
+                            'Logic building tasks for Introduction to Python.',
+                        aiFetchedContent:
+                            'AI-generated notes and explanations for Introduction to Python.',
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
             const SizedBox(height: 32),
 
-            // Warning Strip
+            // ...existing code for warning strip...
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
@@ -127,12 +132,19 @@ class TopicDetailScreen extends StatelessWidget {
               ),
               child: Row(
                 children: const [
-                  Icon(LucideIcons.alertTriangle, color: Colors.amber, size: 20),
+                  Icon(
+                    LucideIcons.alertTriangle,
+                    color: Colors.amber,
+                    size: 20,
+                  ),
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'Complete all 3 modules to unlock next topic',
-                      style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.amber,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -158,10 +170,15 @@ class TopicDetailScreen extends StatelessWidget {
   }) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => targetScreen));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => targetScreen),
+        );
       },
       child: GlassContainer(
-        padding: const EdgeInsets.all(0), // handle padding internally for the left border
+        padding: const EdgeInsets.all(
+          0,
+        ), // handle padding internally for the left border
         hasGlow: progress > 0 && progress < 1.0,
         glowColor: accentColor,
         child: Container(
@@ -199,21 +216,33 @@ class TopicDetailScreen extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           subtitle,
-                          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: badgeColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: badgeColor.withValues(alpha: 0.5)),
+                      border: Border.all(
+                        color: badgeColor.withValues(alpha: 0.5),
+                      ),
                     ),
                     child: Text(
                       badgeText,
-                      style: TextStyle(color: badgeColor, fontSize: 10, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: badgeColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -239,7 +268,7 @@ class TopicDetailScreen extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ]
+                  ],
                 ],
               ),
             ],

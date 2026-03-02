@@ -27,7 +27,10 @@ class _RoadmapTabScreenState extends State<RoadmapTabScreen> {
   Future<void> _onLevelTap(String levelKey) async {
     setState(() => _isLoading = true);
     try {
-      final Map<String, dynamic> result = await _service.generateRoadmap(widget.language, levelKey);
+      final Map<String, dynamic> result = await _service.generateRoadmap(
+        widget.language,
+        levelKey,
+      );
       if (!mounted) return;
       setState(() => _isLoading = false);
 
@@ -35,13 +38,19 @@ class _RoadmapTabScreenState extends State<RoadmapTabScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => LevelDetailScreen(levelTitle: levelKey, levelData: result),
+          builder: (_) => LevelDetailScreen(
+            levelTitle: levelKey,
+            levelData: result,
+            language: widget.language,
+          ),
         ),
       );
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
   }
@@ -58,11 +67,30 @@ class _RoadmapTabScreenState extends State<RoadmapTabScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('Roadmap', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Roadmap',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 20),
-                  LevelCard(title: 'Basic', glowColor: Colors.blue, onTap: () => _onLevelTap('basic')),
-                  LevelCard(title: 'Intermediate', glowColor: Colors.orange, onTap: () => _onLevelTap('intermediate')),
-                  LevelCard(title: 'Advanced', glowColor: Colors.purple, onTap: () => _onLevelTap('advanced')),
+                  LevelCard(
+                    title: 'Basic',
+                    glowColor: Colors.blue,
+                    onTap: () => _onLevelTap('basic'),
+                  ),
+                  LevelCard(
+                    title: 'Intermediate',
+                    glowColor: Colors.orange,
+                    onTap: () => _onLevelTap('intermediate'),
+                  ),
+                  LevelCard(
+                    title: 'Advanced',
+                    glowColor: Colors.purple,
+                    onTap: () => _onLevelTap('advanced'),
+                  ),
                 ],
               ),
             ),
