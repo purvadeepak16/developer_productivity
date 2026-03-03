@@ -33,6 +33,9 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   int _currentIndex = 0;
   int? _selectedIndex;
   int _score = 0;
+  Timer? _timer;
+  double _remaining = 20.0; // seconds
+  bool _answered = false;
 
   @override
   void initState() {
@@ -76,6 +79,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           _questions = limited;
           _loading = false;
         });
+        _startTimer();
       }
     } on TimeoutException catch (_) {
       if (mounted) setState(() { _error = 'Request timed out'; _loading = false; });
@@ -107,34 +111,49 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     }
   }
 
+  void _startTimer() {
+    _timer?.cancel();
+    _remaining = 20.0;
+    _answered = false;
+    _selectedIndex = null;
+    _timer = Timer.periodic(const Duration(milliseconds: 100), (t) {
+      if (!mounted) return;
+      setState(() {
+        _remaining -= 0.1;
+        if (_remaining <= 0) {
+          t.cancel();
+          _onTimeUp();
+        }
+      });
+    });
+  }
+
+  void _onTimeUp() {
+    if (!mounted) return;
+    setState(() {
+      _answered = true;
+      _selectedIndex = null; // no selection
+    });
+  }
+
   // Backwards-compatible wrapper used by existing UI
   Future<void> _loadQuestions() async => _fetchQuestions();
 
   // Called from option tap in the UI
   void _onOptionTap(int index) {
-    if (_questions.isEmpty) return;
+    if (_questions.isEmpty || _answered) return;
+    _timer?.cancel();
+    final current = _questions[_currentIndex];
     setState(() {
       _selectedIndex = index;
-    });
-    // advance after a short delay so user sees selection
-    Future.delayed(const Duration(milliseconds: 300), () {
-      _onNext();
+      _answered = true;
+      if (index == current.correctIndex) _score++;
     });
   }
 
   void _onNext() {
-    if (_selectedIndex == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select an option')),
-      );
-      return;
-    }
-
-    final current = _questions[_currentIndex];
-    if (_selectedIndex == current.correctIndex) {
-      _score++;
-    }
-
+    // Move to next question or finish
+    _timer?.cancel();
     if (_currentIndex >= _questions.length - 1) {
       Navigator.of(context).pushReplacement(MaterialPageRoute(
         builder: (_) => ResultScreen(
@@ -145,12 +164,21 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           topic: widget.topic,
         ),
       ));
-    } else {
-      setState(() {
-        _currentIndex++;
-        _selectedIndex = null;
-      });
+      return;
     }
+
+    setState(() {
+      _currentIndex++;
+      _selectedIndex = null;
+      _answered = false;
+    });
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -214,7 +242,29 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          // Progress bar + timer
+          Row(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: (_remaining.clamp(0.0, 20.0)) / 20.0,
+                    minHeight: 8,
+                    backgroundColor: Colors.white10,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '${_remaining.ceil()}s',
+                style: const TextStyle(color: Colors.white70),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           Card(
             color: cardColor,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -231,12 +281,27 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Expanded(
             child: ListView.builder(
               itemCount: q.options.length,
               itemBuilder: (context, i) {
-                final selected = _selectedIndex == i;
+                // Determine option color based on answer state
+                Color bgColor = cardColor;
+                Color textColor = Colors.white70;
+                if (_answered) {
+                  if (i == q.correctIndex) {
+                    bgColor = Colors.green.withOpacity(0.18);
+                    textColor = Colors.greenAccent.shade100;
+                  } else if (_selectedIndex == i && _selectedIndex != q.correctIndex) {
+                    bgColor = Colors.red.withOpacity(0.18);
+                    textColor = Colors.redAccent.shade100;
+                  }
+                } else if (_selectedIndex == i) {
+                  bgColor = Colors.blueAccent.withOpacity(0.18);
+                  textColor = Colors.white;
+                }
+
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: GestureDetector(
@@ -244,10 +309,12 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 250),
                       decoration: BoxDecoration(
-                        color: selected ? Colors.blueAccent.withValues(alpha: 0.18) : cardColor,
+                        color: bgColor,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: selected ? Colors.blueAccent : Colors.transparent,
+                          color: (_answered && i == q.correctIndex)
+                              ? Colors.greenAccent
+                              : (_selectedIndex == i ? Colors.blueAccent : Colors.transparent),
                           width: 1.6,
                         ),
                       ),
@@ -256,7 +323,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                         child: Text(
                           q.options[i],
                           style: TextStyle(
-                            color: selected ? Colors.white : Colors.white70,
+                            color: textColor,
                             fontSize: 16,
                           ),
                         ),
@@ -267,24 +334,43 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
               },
             ),
           ),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _onNext,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text(
-                    _currentIndex >= _questions.length - 1 ? 'Finish' : 'Next',
-                    style: const TextStyle(fontSize: 16),
-                  ),
+
+          // Explanation + Next button
+          if (_answered) ...[
+            const SizedBox(height: 12),
+            Card(
+              color: cardColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Text(
+                  q.explanation,
+                  style: const TextStyle(color: Colors.white70),
                 ),
               ),
-            ],
-          )
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _onNext,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text(
+                      _currentIndex >= _questions.length - 1 ? 'Finish' : 'Next',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            const SizedBox(height: 12),
+          ]
         ],
       ),
     );
