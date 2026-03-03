@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../theme/app_colors.dart';
 import '../widgets/glass_container.dart';
-import 'placeholders.dart';
+import 'topic_task_screen.dart';
 
 class TopicDetailScreen extends StatelessWidget {
   const TopicDetailScreen({super.key});
@@ -81,7 +81,7 @@ class TopicDetailScreen extends StatelessWidget {
 
             // Example topic card for integration
             Card(
-              color: Colors.white.withOpacity(0.05),
+              color: Colors.white.withValues(alpha: 0.05),
               child: ListTile(
                 leading: Icon(Icons.topic, color: AppColors.primaryBlue),
                 title: Text(
