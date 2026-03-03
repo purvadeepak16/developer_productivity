@@ -39,6 +39,8 @@ dependencies:
   fl_chart: ^1.1.1
   lucide_icons: ^0.257.0
   http: ^1.6.0
+  flame: ^1.23.0
+  google_generative_ai: ^0.4.6
 
 dev_dependencies:
   flutter_test:
@@ -61,6 +63,14 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Assets for games feature
+  assets:
+    - assets/images/
+    - assets/levels/python/
+    - assets/levels/javascript/
+    - assets/levels/sql/
+    - assets/levels/java/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

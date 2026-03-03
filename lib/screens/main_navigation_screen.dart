@@ -5,7 +5,7 @@ import 'roadmap_tab_screen.dart';
 import 'analytics_screen.dart';
 import 'profile_screen.dart';
 import 'ai_recommendation_screen.dart';
-import 'course_completion_screen.dart'; // Just using this as a demo for "games" page
+import 'game_hub_screen.dart';
 import 'assessment_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -36,7 +36,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           topic: 'Introduction to ${widget.initialLanguage ?? 'Python'}',
         );
       case 3:
-        return const CourseCompletionScreen();
+        return const GameHubScreen();
       case 4:
         return const AnalyticsScreen();
       case 5:
