@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'concept_visualizer_screen.dart';
 import 'topic_notes_screen.dart';
+import 'assessment_screen.dart';
 
 class TopicTaskScreen extends StatelessWidget {
   final String topicTitle;
@@ -50,7 +51,16 @@ class TopicTaskScreen extends StatelessWidget {
             }),
             SizedBox(height: 16),
             _buildCard(context, 'Assessment', Icons.assignment, () {
-              _showAssessmentDialog(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AssessmentScreen(
+                    language: language,
+                    level: level,
+                    topic: topicTitle,
+                  ),
+                ),
+              );
             }),
             SizedBox(height: 16),
             _buildCard(context, 'Logic Building', Icons.extension, () {
@@ -90,17 +100,14 @@ class TopicTaskScreen extends StatelessWidget {
   }
 
   void _showAssessmentDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Assessment'),
-        content: Text(assessmentContent),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Close'),
-          ),
-        ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AssessmentScreen(
+          language: language,
+          level: level,
+          topic: topicTitle,
+        ),
       ),
     );
   }

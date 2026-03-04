@@ -5,7 +5,8 @@ import 'roadmap_tab_screen.dart';
 import 'analytics_screen.dart';
 import 'profile_screen.dart';
 import 'ai_recommendation_screen.dart';
-import 'course_completion_screen.dart'; // Just using this as a demo for "games" page
+import 'game_hub_screen.dart';
+import 'assessment_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final String? initialLanguage;
@@ -29,10 +30,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         _roadmapScreen ??= RoadmapTabScreen(language: widget.initialLanguage ?? 'Python');
         return _roadmapScreen!;
       case 2:
-        return const CourseCompletionScreen();
+        return AssessmentScreen(
+          language: widget.initialLanguage ?? 'Python',
+          level: 'basic',
+          topic: 'Introduction to ${widget.initialLanguage ?? 'Python'}',
+        );
       case 3:
-        return const AnalyticsScreen();
+        return const GameHubScreen();
       case 4:
+        return const AnalyticsScreen();
+      case 5:
         return const ProfileScreen();
       default:
         return const AiRecommendationScreen();
@@ -70,6 +77,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           items: const [
             BottomNavigationBarItem(icon: Icon(LucideIcons.home), label: 'Home'),
             BottomNavigationBarItem(icon: Icon(LucideIcons.map), label: 'Roadmap'),
+            BottomNavigationBarItem(icon: Icon(LucideIcons.bookOpen), label: 'Assessment'),
             BottomNavigationBarItem(icon: Icon(LucideIcons.gamepad2), label: 'Games'),
             BottomNavigationBarItem(icon: Icon(LucideIcons.barChart2), label: 'Analytics'),
             BottomNavigationBarItem(icon: Icon(LucideIcons.user), label: 'Profile'),
