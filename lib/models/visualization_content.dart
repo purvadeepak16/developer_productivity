@@ -46,11 +46,14 @@ class ConceptGraphRelation {
   });
 
   factory ConceptGraphRelation.fromRaw(Map<String, dynamic> raw) {
+    final type = (raw['type'] ?? 'hierarchy').toString();
+    final label = (raw['label'] ?? '').toString();
+
     return ConceptGraphRelation(
       from: (raw['from'] ?? '').toString(),
       to: (raw['to'] ?? '').toString(),
-      type: (raw['type'] ?? 'composed_of').toString(),
-      label: (raw['label'] ?? '').toString(),
+      type: type,
+      label: label.isEmpty ? type : label,
     );
   }
 }

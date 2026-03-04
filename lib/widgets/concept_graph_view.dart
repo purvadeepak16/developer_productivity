@@ -14,7 +14,8 @@ class ConceptGraphView extends StatefulWidget {
   State<ConceptGraphView> createState() => _ConceptGraphViewState();
 }
 
-class _ConceptGraphViewState extends State<ConceptGraphView> {
+class _ConceptGraphViewState extends State<ConceptGraphView>
+    with SingleTickerProviderStateMixin {
   static const Size _virtualSize = Size(2200, 1400);
   static const double _nodeWidth = 170;
   static const double _nodeHeight = 58;
@@ -27,12 +28,17 @@ class _ConceptGraphViewState extends State<ConceptGraphView> {
   late List<String> _visibleNodeIds;
   final TransformationController _transformationController =
       TransformationController();
+  late final AnimationController _flowAnimationController;
   bool _didInitialFit = false;
   String? _activeNodeId;
 
   @override
   void initState() {
     super.initState();
+    _flowAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat();
     _initializeGraph();
   }
 
@@ -47,6 +53,7 @@ class _ConceptGraphViewState extends State<ConceptGraphView> {
 
   @override
   void dispose() {
+    _flowAnimationController.dispose();
     _transformationController.dispose();
     super.dispose();
   }
@@ -147,10 +154,12 @@ class _ConceptGraphViewState extends State<ConceptGraphView> {
         return InteractiveViewer(
           transformationController: _transformationController,
           constrained: false,
-          panEnabled: false,
+          panEnabled: true,
+          panAxis: PanAxis.free,
           scaleEnabled: true,
           minScale: 0.25,
           maxScale: 2.8,
+          clipBehavior: Clip.none,
           boundaryMargin: const EdgeInsets.all(900),
           child: SizedBox(
             width: _virtualSize.width,
@@ -158,12 +167,18 @@ class _ConceptGraphViewState extends State<ConceptGraphView> {
             child: Stack(
               children: [
                 Positioned.fill(
-                  child: CustomPaint(
-                    painter: _ConceptGraphEdgesPainter(
-                      nodeIds: _visibleNodeIds,
-                      positions: _positions,
-                      relations: widget.graph.relations,
-                    ),
+                  child: AnimatedBuilder(
+                    animation: _flowAnimationController,
+                    builder: (context, child) {
+                      return CustomPaint(
+                        painter: _ConceptGraphEdgesPainter(
+                          nodeIds: _visibleNodeIds,
+                          positions: _positions,
+                          relations: widget.graph.relations,
+                          flowPhase: _flowAnimationController.value,
+                        ),
+                      );
+                    },
                   ),
                 ),
                 for (final nodeId in _visibleNodeIds) _buildNode(nodeId),
@@ -309,39 +324,165 @@ class _ConceptGraphEdgesPainter extends CustomPainter {
   final List<String> nodeIds;
   final Map<String, Offset> positions;
   final List<ConceptGraphRelation> relations;
+  final double flowPhase;
 
   _ConceptGraphEdgesPainter({
     required this.nodeIds,
     required this.positions,
     required this.relations,
+    required this.flowPhase,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final visibleSet = nodeIds.toSet();
-    final edgePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.3)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-
-    for (final relation in relations) {
+    for (var index = 0; index < relations.length; index++) {
+      final relation = relations[index];
       if (!visibleSet.contains(relation.from) ||
           !visibleSet.contains(relation.to)) {
         continue;
       }
+
       final from = positions[relation.from];
       final to = positions[relation.to];
       if (from == null || to == null) {
         continue;
       }
-      canvas.drawLine(from, to, edgePaint);
+
+      final relationType = relation.type.toLowerCase();
+      final isFlow =
+          relationType.contains('flow') ||
+          relationType.contains('leads') ||
+          relationType.contains('sequence');
+
+      if (isFlow) {
+        _drawFlowEdge(canvas, from, to, relation, index);
+      } else {
+        _drawHierarchyEdge(canvas, from, to, relation);
+      }
     }
+  }
+
+  void _drawHierarchyEdge(
+    Canvas canvas,
+    Offset from,
+    Offset to,
+    ConceptGraphRelation relation,
+  ) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.26)
+      ..strokeWidth = 1.4
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawLine(from, to, paint);
+    _drawRelationLabel(canvas, from, to, relation);
+  }
+
+  void _drawFlowEdge(
+    Canvas canvas,
+    Offset from,
+    Offset to,
+    ConceptGraphRelation relation,
+    int index,
+  ) {
+    final pulse = (sin((flowPhase * 2 * pi) + index) + 1) / 2;
+
+    final paint = Paint()
+      ..color = AppColors.primaryBlue.withValues(alpha: 0.55 + 0.25 * pulse)
+      ..strokeWidth = 2.0 + 0.9 * pulse
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawLine(from, to, paint);
+
+    final t = (flowPhase + index * 0.11) % 1.0;
+    final dot = Offset.lerp(from, to, t) ?? from;
+    canvas.drawCircle(
+      dot,
+      2.8,
+      Paint()..color = AppColors.accentGreen.withValues(alpha: 0.9),
+    );
+
+    _drawArrowHead(canvas, from, to, paint.color);
+    _drawRelationLabel(canvas, from, to, relation);
+  }
+
+  void _drawArrowHead(Canvas canvas, Offset from, Offset to, Color color) {
+    final direction = to - from;
+    if (direction.distance < 0.01) {
+      return;
+    }
+
+    final unit = direction / direction.distance;
+    final arrowLength = 11.0;
+    final arrowWidth = 6.0;
+    final normal = Offset(-unit.dy, unit.dx);
+
+    final tip = to;
+    final base = tip - unit * arrowLength;
+    final left = base + normal * arrowWidth;
+    final right = base - normal * arrowWidth;
+
+    final path = Path()
+      ..moveTo(tip.dx, tip.dy)
+      ..lineTo(left.dx, left.dy)
+      ..lineTo(right.dx, right.dy)
+      ..close();
+
+    canvas.drawPath(path, Paint()..color = color);
+  }
+
+  void _drawRelationLabel(
+    Canvas canvas,
+    Offset from,
+    Offset to,
+    ConceptGraphRelation relation,
+  ) {
+    final text = (relation.label.isNotEmpty ? relation.label : relation.type)
+        .replaceAll('_', ' ');
+    final mid = Offset((from.dx + to.dx) / 2, (from.dy + to.dy) / 2);
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.65),
+          fontSize: 9,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout(maxWidth: 120);
+
+    final padding = const EdgeInsets.symmetric(horizontal: 4, vertical: 2);
+    final labelOffset = Offset(
+      mid.dx - textPainter.width / 2 - padding.horizontal / 2,
+      mid.dy - textPainter.height / 2 - padding.vertical / 2,
+    );
+
+    final bgRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        labelOffset.dx,
+        labelOffset.dy,
+        textPainter.width + padding.horizontal,
+        textPainter.height + padding.vertical,
+      ),
+      const Radius.circular(4),
+    );
+
+    canvas.drawRRect(
+      bgRect,
+      Paint()..color = Colors.black.withValues(alpha: 0.35),
+    );
+
+    textPainter.paint(canvas, labelOffset + Offset(padding.left, padding.top));
   }
 
   @override
   bool shouldRepaint(covariant _ConceptGraphEdgesPainter oldDelegate) {
     return oldDelegate.nodeIds != nodeIds ||
         oldDelegate.positions != positions ||
-        oldDelegate.relations != relations;
+        oldDelegate.relations != relations ||
+        oldDelegate.flowPhase != flowPhase;
   }
 }
