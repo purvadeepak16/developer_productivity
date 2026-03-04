@@ -1,11 +1,12 @@
 import 'package:amazon_cognito_identity_dart_2/cognito.dart';
 
 class CognitoService {
+  static String? _cachedSignedInEmail;
 
   // 🔹 Replace with your real values
   final CognitoUserPool userPool = CognitoUserPool(
-    'eu-north-1_Z4cAx5fbA',   // example: eu-north-1_xxxxx
-    '4hdroivch127hg4pakf9edi4df',      // example: 4abcd123xyz
+    'eu-north-1_Z4cAx5fbA', // example: eu-north-1_xxxxx
+    '4hdroivch127hg4pakf9edi4df', // example: 4abcd123xyz
   );
 
   // ===============================
@@ -63,10 +64,34 @@ class CognitoService {
       );
 
       await cognitoUser.authenticateUser(authDetails);
+      _cachedSignedInEmail = email;
 
       return "Login successful";
     } catch (e) {
       return "Error: ${e.toString()}";
+    }
+  }
+
+  Future<String?> getSignedInEmail() async {
+    if (_cachedSignedInEmail != null && _cachedSignedInEmail!.isNotEmpty) {
+      return _cachedSignedInEmail;
+    }
+
+    try {
+      final CognitoUser? currentUser = await userPool.getCurrentUser();
+      if (currentUser == null) {
+        return null;
+      }
+
+      final session = await currentUser.getSession();
+      if (!(session?.isValid() ?? false)) {
+        return null;
+      }
+
+      _cachedSignedInEmail = currentUser.username;
+      return _cachedSignedInEmail;
+    } catch (_) {
+      return _cachedSignedInEmail;
     }
   }
 }
